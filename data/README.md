@@ -1,4 +1,4 @@
-# 📊 Candidate Assessment Dashboard
+# 📊 Candidate Assessment Dashboard for Interview Tracking
 
 A modern, responsive dashboard for tracking candidate assessments and interview performance. Built with vanilla HTML, CSS, and JavaScript for maximum compatibility and performance.
 
