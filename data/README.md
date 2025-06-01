@@ -143,19 +143,10 @@ DashboardUtils.refreshData();
 
 ## 🚀 Deployment Options
 
-### GitHub Pages
-1. Push your code to GitHub
-2. Run: `npm run deploy`
-3. Enable GitHub Pages in repository settings
-
 ### Netlify
 1. Connect your GitHub repository to Netlify
 2. Set build command: `npm run build`
 3. Set publish directory: `./`
-
-### Vercel
-1. Import project to Vercel
-2. Deploy with default settings
 
 ## 🔧 Development
 
