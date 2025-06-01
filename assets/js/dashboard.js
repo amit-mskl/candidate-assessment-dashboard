@@ -1,4 +1,4 @@
-// Main dashboard functionality
+// Main dashboard functionality for Moment Theme
 
 class AssessmentDashboard {
     constructor() {
@@ -12,60 +12,106 @@ class AssessmentDashboard {
             this.addStaggeredAnimations();
         });
 
+        // Add search functionality
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', (e) => {
+                this.searchCandidates(e.target.value);
+            });
+        }
+
         // Add resize listener for responsive behavior
         window.addEventListener('resize', this.handleResize.bind(this));
     }
 
     // Main render function
     renderDashboard() {
-        this.populateInterviewStats();
+        this.updateMetrics();
+        this.populateTechnologyStats();
         this.populateCandidateTable();
-        this.updateProgressBar();
+        this.updateDonutChart();
+        this.populateStatusLegend();
     }
 
-    // Populate interview statistics cards
-    populateInterviewStats() {
-        const container = document.getElementById('interviewStats');
+    // Update key metrics
+    updateMetrics() {
+        const totalCandidates = candidateData.length;
+        const totalAssessments = programData.preAssessment.cleared;
+        const successRate = DataUtils.calculateSuccessRate(
+            programData.preAssessment.cleared, 
+            programData.preAssessment.enrolled
+        );
+        const averageScore = this.calculateOverallAverageScore();
+
+        // Update metric values
+        this.updateElement('totalCandidates', totalCandidates);
+        this.updateElement('activeAssessments', totalAssessments);
+        this.updateElement('successRate', `${successRate}%`);
+        this.updateElement('averageScore', averageScore.toFixed(1));
+    }
+
+    // Calculate overall average score
+    calculateOverallAverageScore() {
+        let totalScore = 0;
+        let totalTests = 0;
+
+        candidateData.forEach(candidate => {
+            const scores = [candidate.sql, candidate.python, candidate.cloud, candidate.pyspark, candidate.databricks]
+                .filter(score => score !== 'Absent')
+                .map(score => parseInt(score));
+            
+            totalScore += scores.reduce((sum, score) => sum + score, 0);
+            totalTests += scores.length;
+        });
+
+        return totalTests > 0 ? totalScore / totalTests : 0;
+    }
+
+    // Update element content safely
+    updateElement(id, content) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = content;
+        }
+    }
+
+    // Populate technology statistics
+    populateTechnologyStats() {
+        const container = document.getElementById('technologyStats');
         if (!container) return;
 
-        container.innerHTML = ''; // Clear existing content
+        container.innerHTML = '';
 
-        interviewData.forEach(interview => {
-            const successRate = DataUtils.calculateSuccessRate(interview.cleared, interview.enrolled);
-            const item = this.createInterviewStatItem(interview, successRate);
+        interviewData.forEach(tech => {
+            const successRate = DataUtils.calculateSuccessRate(tech.cleared, tech.enrolled);
+            const item = this.createTechnologyStatItem(tech, successRate);
             container.appendChild(item);
         });
     }
 
-    // Create individual interview stat item
-    createInterviewStatItem(interview, successRate) {
+    // Create individual technology stat item
+    createTechnologyStatItem(tech, successRate) {
         const item = document.createElement('div');
-        item.className = 'interview-item';
+        item.className = 'tech-stat';
         
         item.innerHTML = `
-            <h4>${interview.name}</h4>
-            <div class="stats-row">
-                <span>Enrolled:</span>
-                <span><strong>${interview.enrolled}</strong></span>
+            <div class="tech-name">${tech.name}</div>
+            <div class="tech-metrics">
+                <span class="tech-label">Enrolled:</span>
+                <span class="tech-value">${tech.enrolled}</span>
             </div>
-            <div class="stats-row">
-                <span>Cleared:</span>
-                <span style="color: #38b2ac;"><strong>${interview.cleared}</strong></span>
+            <div class="tech-metrics">
+                <span class="tech-label">Cleared:</span>
+                <span class="tech-value" style="color: #10b981;">${tech.cleared}</span>
             </div>
-            <div class="stats-row">
-                <span>Rejected:</span>
-                <span style="color: #e53e3e;"><strong>${interview.rejected}</strong></span>
+            <div class="tech-metrics">
+                <span class="tech-label">Success:</span>
+                <span class="tech-value">${successRate}%</span>
             </div>
-            <div class="stats-row">
-                <span>Success Rate:</span>
-                <span style="color: #2d3748;"><strong>${successRate}%</strong></span>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${successRate}%"></div>
             </div>
         `;
-
-        // Add click event for detailed view (future enhancement)
-        item.addEventListener('click', () => {
-            this.showInterviewDetails(interview);
-        });
 
         return item;
     }
@@ -75,7 +121,7 @@ class AssessmentDashboard {
         const tbody = document.getElementById('candidateTableBody');
         if (!tbody) return;
 
-        tbody.innerHTML = ''; // Clear existing content
+        tbody.innerHTML = '';
 
         candidateData.forEach((candidate, index) => {
             const row = this.createCandidateRow(candidate, index);
@@ -88,43 +134,84 @@ class AssessmentDashboard {
         const row = document.createElement('tr');
         row.className = 'candidate-row';
         
+        const average = this.calculateCandidateAverage(candidate);
+        
         row.innerHTML = `
-            <td><strong>${candidate.name}</strong></td>
-            <td><a href="mailto:${candidate.email}" class="email-link">${candidate.email}</a></td>
+            <td class="candidate-name">${candidate.name}</td>
+            <td><a href="mailto:${candidate.email}" class="candidate-email">${candidate.email}</a></td>
             <td>${this.createScoreBadge(candidate.sql)}</td>
             <td>${this.createScoreBadge(candidate.python)}</td>
             <td>${this.createScoreBadge(candidate.cloud)}</td>
             <td>${this.createScoreBadge(candidate.pyspark)}</td>
             <td>${this.createScoreBadge(candidate.databricks)}</td>
+            <td>${this.createScoreBadge(average)}</td>
         `;
 
-        // Add hover effect
-        row.addEventListener('mouseenter', () => {
-            row.style.backgroundColor = '#f8fafc';
-        });
-
-        row.addEventListener('mouseleave', () => {
-            row.style.backgroundColor = '';
-        });
-
         return row;
+    }
+
+    // Calculate individual candidate average
+    calculateCandidateAverage(candidate) {
+        const scores = [candidate.sql, candidate.python, candidate.cloud, candidate.pyspark, candidate.databricks]
+            .filter(score => score !== 'Absent')
+            .map(score => parseInt(score));
+        
+        if (scores.length === 0) return 'N/A';
+        return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
     }
 
     // Create score badge HTML
     createScoreBadge(score) {
         const scoreClass = DataUtils.getScoreClass(score);
-        return `<span class="score ${scoreClass}">${score}</span>`;
+        return `<span class="score-badge score-${scoreClass}">${score}</span>`;
     }
 
-    // Update progress bar based on assessment data
-    updateProgressBar() {
-        const progressFill = document.querySelector('.progress-fill');
-        if (!progressFill) return;
-
-        const { cleared, enrolled } = programData.preAssessment;
-        const progressPercentage = DataUtils.calculateSuccessRate(cleared, enrolled);
+    // Update donut chart
+    updateDonutChart() {
+        const successRate = DataUtils.calculateSuccessRate(
+            programData.preAssessment.cleared, 
+            programData.preAssessment.enrolled
+        );
         
-        progressFill.style.width = `${progressPercentage}%`;
+        // Update circle stroke-dashoffset for progress
+        const circle = document.getElementById('successCircle');
+        const donutValue = document.getElementById('donutValue');
+        
+        if (circle && donutValue) {
+            const circumference = 2 * Math.PI * 35; // radius = 35
+            const offset = circumference - (successRate / 100) * circumference;
+            circle.style.strokeDasharray = circumference;
+            circle.style.strokeDashoffset = offset;
+            donutValue.textContent = `${successRate}%`;
+        }
+    }
+
+    // Populate status legend
+    populateStatusLegend() {
+        const container = document.getElementById('statusLegend');
+        if (!container) return;
+
+        const statusData = [
+            { label: 'Cleared', value: programData.preAssessment.cleared, color: '#10b981' },
+            { label: 'Enrolled', value: programData.preAssessment.enrolled, color: '#3b82f6' },
+            { label: 'Failed', value: programData.preAssessment.failed, color: '#ef4444' },
+            { label: 'Not Started', value: programData.preAssessment.notStarted, color: '#f59e0b' }
+        ];
+
+        container.innerHTML = '';
+        
+        statusData.forEach(status => {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            item.innerHTML = `
+                <div class="legend-label">
+                    <div class="legend-dot" style="background: ${status.color};"></div>
+                    ${status.label}
+                </div>
+                <div class="legend-value">${status.value}</div>
+            `;
+            container.appendChild(item);
+        });
     }
 
     // Add staggered animations to cards
@@ -137,58 +224,31 @@ class AssessmentDashboard {
 
     // Handle window resize for responsive behavior
     handleResize() {
-        // Recalculate any responsive elements if needed
         this.adjustTableForMobile();
     }
 
     // Adjust table for mobile view
     adjustTableForMobile() {
-        const table = document.querySelector('.candidate-table table');
+        const table = document.querySelector('.candidates-table');
         const isMobile = window.innerWidth <= 768;
         
         if (table) {
             if (isMobile) {
-                table.style.fontSize = '0.85rem';
+                table.style.fontSize = '12px';
             } else {
-                table.style.fontSize = '0.95rem';
+                table.style.fontSize = '14px';
             }
         }
     }
 
-    // Show detailed interview information (placeholder for future enhancement)
-    showInterviewDetails(interview) {
-        console.log(`Showing details for ${interview.name}:`, interview);
-        // This could open a modal or navigate to a detailed view
-    }
-
-    // Filter candidates by score range
-    filterCandidatesByScore(minScore, maxScore) {
-        const rows = document.querySelectorAll('.candidate-row');
-        
-        rows.forEach(row => {
-            const scores = Array.from(row.querySelectorAll('.score')).map(badge => {
-                const text = badge.textContent;
-                return text === 'Absent' ? 0 : parseInt(text);
-            });
-            
-            const averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
-            
-            if (averageScore >= minScore && averageScore <= maxScore) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-    }
-
-    // Search candidates by name
+    // Search candidates by name or email
     searchCandidates(searchTerm) {
         const rows = document.querySelectorAll('.candidate-row');
         const term = searchTerm.toLowerCase();
         
         rows.forEach(row => {
-            const name = row.querySelector('td strong').textContent.toLowerCase();
-            const email = row.querySelector('.email-link').textContent.toLowerCase();
+            const name = row.querySelector('.candidate-name').textContent.toLowerCase();
+            const email = row.querySelector('.candidate-email').textContent.toLowerCase();
             
             if (name.includes(term) || email.includes(term)) {
                 row.style.display = '';
@@ -198,7 +258,28 @@ class AssessmentDashboard {
         });
     }
 
-    // Export data to CSV (future enhancement)
+    // Filter candidates by score range
+    filterCandidatesByScore(minScore, maxScore) {
+        const rows = document.querySelectorAll('.candidate-row');
+        
+        rows.forEach(row => {
+            const scores = Array.from(row.querySelectorAll('.score-badge')).map(badge => {
+                const text = badge.textContent;
+                return text === 'Absent' || text === 'N/A' ? 0 : parseInt(text);
+            });
+            
+            // Get average score (last column)
+            const averageScore = scores[scores.length - 1];
+            
+            if (averageScore >= minScore && averageScore <= maxScore) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+
+    // Export data to CSV
     exportToCSV() {
         const csvContent = this.generateCSVContent();
         const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -214,18 +295,37 @@ class AssessmentDashboard {
 
     // Generate CSV content
     generateCSVContent() {
-        const headers = ['Name', 'Email', 'SQL', 'Python', 'Cloud', 'PySpark', 'Databricks'];
-        const rows = candidateData.map(candidate => [
-            candidate.name,
-            candidate.email,
-            candidate.sql,
-            candidate.python,
-            candidate.cloud,
-            candidate.pyspark,
-            candidate.databricks
-        ]);
+        const headers = ['Name', 'Email', 'SQL', 'Python', 'Cloud', 'PySpark', 'Databricks', 'Average'];
+        const rows = candidateData.map(candidate => {
+            const average = this.calculateCandidateAverage(candidate);
+            return [
+                candidate.name,
+                candidate.email,
+                candidate.sql,
+                candidate.python,
+                candidate.cloud,
+                candidate.pyspark,
+                candidate.databricks,
+                average
+            ];
+        });
 
         return [headers, ...rows].map(row => row.join(',')).join('\n');
+    }
+
+    // Show detailed technology information
+    showTechnologyDetails(techName) {
+        const tech = interviewData.find(t => t.name === techName);
+        if (tech) {
+            console.log(`Technology Details for ${tech.name}:`, tech);
+            // Future: Could open a modal or detailed view
+        }
+    }
+
+    // Refresh dashboard data
+    refreshDashboard() {
+        this.renderDashboard();
+        console.log('Dashboard refreshed');
     }
 }
 
@@ -239,5 +339,6 @@ window.DashboardUtils = {
     filterByScore: (min, max) => window.dashboard.filterCandidatesByScore(min, max),
     searchCandidates: (term) => window.dashboard.searchCandidates(term),
     exportData: () => window.dashboard.exportToCSV(),
-    refreshData: () => window.dashboard.renderDashboard()
+    refreshData: () => window.dashboard.refreshDashboard(),
+    showTechDetails: (techName) => window.dashboard.showTechnologyDetails(techName)
 };
