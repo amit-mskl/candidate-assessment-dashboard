@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candidate Assessment Dashboard</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="icon" href="assets/images/favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <div class="container">
+        <div class="header fade-in">
+            <h1>📊 Assessment Dashboard</h1>
+            <p>Real-time insights into candidate performance and program metrics</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card fade-in">
+                <div class="card-title">
+                    <span class="icon">👥</span>
+                    Program Overview
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Candidates</span>
+                    <span class="metric-value total">40</span>
+                </div>
+            </div>
+
+            <div class="card fade-in">
+                <div class="card-title">
+                    <span class="icon">📋</span>
+                    Pre-Assessment Status
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Enrolled</span>
+                    <span class="metric-value enrolled">40</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Cleared</span>
+                    <span class="metric-value cleared">30</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Failed</span>
+                    <span class="metric-value failed">3</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Not Started</span>
+                    <span class="metric-value not-started">2</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 75%"></div>
+                </div>
+            </div>
+
+            <div class="card fade-in" style="grid-column: span 2;">
+                <div class="card-title">
+                    <span class="icon">💻</span>
+                    Interview Performance by Technology
+                </div>
+                <div class="interview-stats" id="interviewStats">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <div class="candidate-table fade-in">
+            <div class="table-header">
+                <span class="icon">🎯</span>
+                Individual Candidate Performance
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>SQL</th>
+                        <th>Python</th>
+                        <th>Cloud</th>
+                        <th>PySpark</th>
+                        <th>Databricks</th>
+                    </tr>
+                </thead>
+                <tbody id="candidateTableBody">
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="assets/js/data.js"></script>
+    <script src="assets/js/dashboard.js"></script>
+</body>
+</html>
